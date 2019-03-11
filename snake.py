@@ -10,6 +10,7 @@ pygame.mouse.set_visible(0)
 
 clock = pygame.time.Clock() # get a clock for the main loop
 running = True # should the game stop?
+started = False
 
 up = 0 # directions
 right = 1
@@ -18,6 +19,7 @@ left = 3
 
 snakePos = [(16,12)]
 snakeDir = 4
+lives = 3
 length = 1 # how long the snake is
 myfont = pygame.font.SysFont("monospace", 16)
 
@@ -41,6 +43,7 @@ background.fill(pygame.Color("black"))
 def handleEvents():
     global snakeDir # need to modify snake direction
     global running  # same here
+    global started
 
     for event in pygame.event.get():
         if event.type == QUIT:  # quit if we press close
@@ -49,18 +52,23 @@ def handleEvents():
             running = False
         elif event.type == KEYDOWN and event.key == K_LEFT:
             snakeDir = left
+            started = True
         elif event.type == KEYDOWN and event.key == K_RIGHT:
             snakeDir = right
+            started = True
         elif event.type == KEYDOWN and event.key == K_UP:
             snakeDir = up
+            started = True
         elif event.type == KEYDOWN and event.key == K_DOWN:
             snakeDir = down
+            started = True
 
 def update():
     global snakePos
     global fruitPos
     global running
     global length
+    global lives
 
     (x,y) = snakePos[0] # get first snake position and update it
     if snakeDir == up:
@@ -79,17 +87,25 @@ def update():
             str(snakeDir)
         )
 
-    snakePos.insert(0, (x,y)) # add new position to the snake
+    if started:
+        snakePos.insert(0, (x,y)) # add new position to the snake
 
-    # longer snakes and add fruit logic
-    if (snakePos[0] == fruitPos[0]):
-        length += 1
-        fruitPos = [(random.randrange(1,32),random.randrange(1,24))]
-    elif (snakePos[0] in snakePos[1:]):
-        snakePos = [(x,y)]
-        length = 1
-    else:
-        snakePos.pop() #remove old one so doesn't grow
+        # longer snakes and add fruit logic
+        if (snakePos[0] == fruitPos[0]):
+            length += 1
+            fruitPos = [(random.randrange(1,32),random.randrange(1,24))]
+            
+        elif (snakePos[0] in snakePos[1:] and snakePos[1][0]):
+            if(lives == 1): # then end game
+                snakePos = [(x,y)]
+                length = 1
+                lives = 0
+                running = False
+            else:
+                lives = lives - 1
+
+        else:
+            snakePos.pop() #remove old one so doesn't grow
 
 
 
@@ -106,7 +122,9 @@ def draw():
 
     # update
     scoretext = myfont.render("Score = "+str(length-1), True, (255,255,255))
-    screen.blit(scoretext, (5, 10))
+    livestext = myfont.render("Lives = "+str(lives), True, (255,255,255))
+    screen.blit(scoretext, (100, 10))
+    screen.blit(livestext, (450, 10))
 
     # and flip the screen
     pygame.display.flip()
